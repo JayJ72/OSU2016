@@ -1,0 +1,185 @@
+'----------------------------------------------------------
+'Jay Banerji, Pong Game for Jnr Engineers Interview 2017
+'----------------------------------------------------------
+'Control Binding
+GraphicsWindow.KeyDown = OnKeyDown
+'Window/Global Variables
+gw = 600
+gh = 300
+Not = "True=False;False=True;"
+'Window
+GraphicsWindow.Title = "Tennis Game"
+GraphicsWindow.Width = gw
+GraphicsWindow.Height = gh
+'----------------------------------------------------------
+'Whole Game Loop
+BeginGame:
+
+'Title Card Display
+TitleCard()
+If (GraphicsWindow.LastKey = "Return") Then
+  GraphicsWindow.Clear() 'Conditional is continued at bottom
+  '----------------------------------------------------------
+  'Draw Objects
+  'Player1
+  GraphicsWindow.PenColor = "SteelBlue"
+  GraphicsWindow.BrushColor = "SkyBlue"
+  p1racquet = Shapes.AddRectangle(20,100)
+  p1x = 5
+  'Player2
+  GraphicsWindow.PenColor = "FireBrick"
+  GraphicsWindow.BrushColor = "IndianRed"
+  p2racquet = Shapes.AddRectangle(20,100)
+  p2x = GraphicsWindow.Width - 25
+  'Ball
+  GraphicsWindow.PenColor = "Chocolate"
+  GraphicsWindow.BrushColor = "SandyBrown"
+  ball = Shapes.AddEllipse(10,10)
+  '-----------------------------------------------------------
+  'Begin the Match
+  Begin:
+  'Initialise Positions
+  InitPos()
+  'Main
+  dx = 1
+  dy = 1
+  scoreP1 =0
+  scoreP2 =0
+  playGame = "True"
+  ScoreCard()
+  RunLoop: 'This is used for keeping checkwin active
+  CheckWin()
+  While (playGame = "True")
+    GraphicsWindow.BackgroundColor = "White"
+    bx = bx + dx
+    by = by + dy
+    Bounce()
+    MainLoop()
+  EndWhile
+  Goto RunLoop
+  Else 
+    Goto BeginGame 'To keep Title Card active until enter is pressed
+EndIf
+'----------------------------------------------------------
+'MainLoop
+Sub MainLoop
+  Shapes.Move(p1racquet, p1x, p1y)
+  Shapes.Move(p2racquet, p2x, p2y)
+  Shapes.Move(ball, bx, by)
+  Program.Delay(5)
+EndSub
+'Starting Positions
+Sub InitPos
+  p1y = 0
+  p2y = 0
+  bx = (GraphicsWindow.Width/2) - 5
+  by = (GraphicsWindow.Height/2) - 5
+EndSub
+'Controls
+Sub OnKeyDown
+  key = GraphicsWindow.LastKey
+  If key="Z" Then
+    p1y = p1y + 20
+  ElseIf key="A" Then
+    p1y = p1y - 20
+  ElseIf key="Down" Then
+    p2y = p2y + 20
+  ElseIf key="Up" Then
+    p2y = p2y - 20
+  ElseIf key="P" Then
+    playGame = Not[playGame]
+  ElseIf key="Space" Then
+    InitPos()
+    playGame = "True"
+    Shapes.Remove(p1ScoreMsg)
+    Shapes.Remove(p2ScoreMsg)
+  EndIf
+EndSub
+'Display Title Card with Credit/Rules
+Sub TitleCard
+  GraphicsWindow.BackgroundColor = "Black"
+  GraphicsWindow.PenColor = "White"
+  GraphicsWindow.DrawBoundText(50, 50, gw-100, "Welcome to Jay's Pong Game")
+  GraphicsWindow.DrawBoundText(50, 100, gw - 100, "Controls: P = Pause/Unpause; Space = Next Round")
+  GraphicsWindow.DrawBoundText(50, 150, gw -100, "First to 5 wins. Press Enter to begin")
+EndSub
+'Collision Detect and Bounce
+Sub Bounce
+  'Walls
+  If (by <= 0 or by >= gh) Then
+    dy = -dy
+  EndIf
+  'Racquets
+  p1top = Shapes.GetTop(p1racquet)
+  p1bottom = Shapes.GetTop(p1racquet) + 100
+  p2top = Shapes.GetTop(p2racquet)
+  p2bottom = Shapes.GetTop(p2racquet) + 100
+  If (bx = 25 And by >= p1top And by <= p1bottom) Then
+    dx = -dx
+  ElseIf (bx = p2x And by >= p2top And by <= p2bottom)Then
+    dx = -dx
+  'If misses racquet
+  ElseIf (bx <= 0 And (by <= p1top or by >= p1bottom)) Then
+    scoreP2 = scoreP2 + 1
+    ClearScore()
+    ScoreCard()
+    playGame = "False"
+    p1ScoreMsg = Shapes.AddText("Point for Red!")
+    Shapes.Move(p1ScoreMsg, gw/2 -130, gh/2)
+  ElseIf (bx >= gw And (by <= p2top or by >= p2bottom)) Then
+    scoreP1 = scoreP1 + 1
+    ClearScore()
+    ScoreCard()
+    playGame = "False"
+    p2ScoreMsg = Shapes.AddText("Point for Blue!")
+    Shapes.Move(p2ScoreMsg, gw/2 -130, gh/2)
+   EndIf
+EndSub
+'Display Score
+Sub ScoreCard
+  GraphicsWindow.FontSize = 36
+  p1Score = Shapes.AddText(scoreP1)
+  breaker = Shapes.AddText("|")
+  p2Score = Shapes.AddText(scoreP2)
+  Shapes.Move(p1Score, gw/2 - 30, 5)
+  Shapes.Move(breaker, gw/2 - 10, 5)
+  Shapes.Move(p2Score, gw/2 + 10, 5)
+EndSub
+'Clear/Update Score
+Sub ClearScore
+  Shapes.Remove(p1Score)
+  Shapes.Remove(p2Score)
+  Shapes.Remove(breaker)
+EndSub
+'Check if anyone has won
+Sub CheckWin
+  If (scoreP1 =5) Then
+    TextWindow.WriteLine("Blue Wins!")
+    PlayAgain()
+  ElseIf (scoreP2 =5) Then
+    TextWindow.WriteLine("Red Wins!")
+    PlayAgain()
+  EndIf
+EndSub
+'Play the game again
+Sub PlayAgain
+  'TextWindow.Show()
+  TextWindow.WriteLine("Play Again? Y/N")
+  inPlay = TextWindow.Read()
+  If (inPlay = "Y") Then
+    scoreP1 = 0
+    scoreP2 = 0
+    ClearScore()
+    Shapes.Remove(p1ScoreMsg)
+    Shapes.Remove(p2ScoreMsg)
+    ScoreCard()
+    'TextWindow.Clear() - Text window should not be cleared/hidden because
+    'TextWindow.Hide() - It is a known SmallBasic Error: https://social.technet.microsoft.com/wiki/contents/articles/29200.small-basic-errors.aspx#The_request_is_not_valid
+    Goto Begin
+  ElseIf (inPlay = "N") Then
+    Program.End()
+  EndIf
+EndSub
+
+
+
